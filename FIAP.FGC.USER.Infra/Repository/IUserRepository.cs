@@ -1,0 +1,14 @@
+﻿
+
+using FIAP.FGC.USER.Core.Inputs;
+
+namespace FIAP.FGC.USER.Infra.Repository
+{
+	public interface IUserRepository
+	{
+		Task<IEnumerable<UserResponseDto>> GetAll();
+        Task<UserResponseDto?> GetById(int id);
+		Task<bool> Update(int id, UserUpdateDto userUpdateDto);
+		Task<bool> Remove(int id);
+    }
+}

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../FIAP.FGC.USER.Application/FIAP.FGC.USER.Application.csproj" />
+  <Project Path="../FIAP.FGC.USER.Core/FIAP.FGC.USER.Core.csproj" />
+  <Project Path="../FIAP.FGC.USER.Infra/FIAP.FGC.USER.Infra.csproj" />
+  <Project Path="FIAP.FGC.USER.WebApi/FIAP.FGC.USER.WebApi.csproj" />
+</Solution>
