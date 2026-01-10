@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: userservice
+  template:
+    metadata:
+      labels:
+        app: userservice
+    spec:
+
+      initContainers:
+        - name: wait-for-sqlserver
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "Aguardando SQL Server..."
+              until nc -z sqlserver 1433; do
+                echo "SQL Server ainda não disponível..."
+                sleep 5
+              done
+              echo "SQL Server disponível!"
+
+      containers:
+        - name: userservice
+          image: userservice:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: userservice-config
+
+          env:
+            - name: ConnectionStrings__Core
+              valueFrom:
+                secretKeyRef:
+                  name: userservice-secrets
+                  key: connectionString
+
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: userservice-secrets
+                  key: jwtKey
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
