@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using UserService.Application.Auth;
 using UserService.Application.Mapping;
+using UserService.Application.Producer;
 using UserService.Application.Services;
 using UserService.Core.Interfaces.Repository;
 using UserService.Core.Interfaces.Utils;
@@ -15,6 +16,7 @@ using UserService.Core.Utils;
 using UserService.Infra.Context;
 using UserService.Infra.Repository;
 using UserService.Infra.Seed;
+using UserService.WebApi.Configuration;
 using UserService.WebApi.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +25,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddProblemDetails();
 
 // Add services to the container.
+
+builder.RegisterConfigurations();
+builder.RegisterMassTransit();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -64,6 +69,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Core"));
     options.UseLazyLoadingProxies();
 }, ServiceLifetime.Scoped);
+
+builder.Services.AddSingleton<UserProducer>();
 
 builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 

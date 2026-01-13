@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using UserService.Application.Inputs;
+using UserService.Application.Producer;
 using UserService.Application.Services;
 using UserService.Application.Validation;
 using UserService.Application.Web;
@@ -10,7 +11,7 @@ using UserService.Core.Models;
 
 namespace UserService.Application.Auth
 {
-    public class AuthService(IMapper mapper, IPasswordHasher passwordHasher, IAuthRepository repo, IConfiguration config) : BaseService, IAuthService
+    public class AuthService(IMapper mapper, IPasswordHasher passwordHasher, IAuthRepository repo, IConfiguration config, UserProducer userProducer) : BaseService, IAuthService
     {
         private readonly IAuthRepository _repository = repo;
         private readonly IConfiguration _configuration = config;
@@ -61,7 +62,9 @@ namespace UserService.Application.Auth
             entity.Password = _passwordHasher.Hash(dto.Password);
 
             var id = await _repository.Create(entity);
-            return Created(id, "Usuário registrado com sucesso.");
+            await userProducer.PublishUserCreatedEvent();
+
+			return Created(id, "Usuário registrado com sucesso.");
         }
 
         public async Task<IApiResponse<int>> RegisterAdmin(UserRegisterDto dto)
