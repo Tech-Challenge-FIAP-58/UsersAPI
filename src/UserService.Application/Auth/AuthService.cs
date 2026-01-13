@@ -62,7 +62,7 @@ namespace UserService.Application.Auth
             entity.Password = _passwordHasher.Hash(dto.Password);
 
             var id = await _repository.Create(entity);
-            await userProducer.PublishUserCreatedEvent();
+            await userProducer.PublishUserCreatedEvent(id, entity.Email);
 
 			return Created(id, "Usuário registrado com sucesso.");
         }
