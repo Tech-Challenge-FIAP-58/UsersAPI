@@ -33,6 +33,10 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__Key: ${JWT_KEY}
       Jwt__ExpiresInMinutes: ${JWT_EXPIRES_IN_MINUTES}
+      BootstrapAdmin__Cpf: ${CPF}
+      BootstrapAdmin__Email: ${EMAIL}
+      BootstrapAdmin__Password: ${PASSWORD}
+
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
