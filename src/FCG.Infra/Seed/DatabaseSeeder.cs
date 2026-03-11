@@ -63,8 +63,7 @@ namespace FCG.Infra.Seed
                 || string.IsNullOrWhiteSpace(adminCpf))
             {
                 logger.LogError("Configuração BootstrapAdmin incompleta. Seed abortado.");
-                throw new InvalidOperationException(
-                    "BootstrapAdmin não configurado. Defina Cpf, Email e Password.");
+                return;
             }
 
             logger.LogInformation("Configuração BootstrapAdmin carregada com sucesso.");
