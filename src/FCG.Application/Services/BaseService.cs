@@ -7,14 +7,14 @@ namespace FCG.Application.Services
     {
         // ===== Preferir estes =====
 
-        protected static IApiResponse<T> Ok<T>(T result, string message = "")
+        public static IApiResponse<T> Ok<T>(T result, string message = "")
             => Build(result, HttpStatusCode.OK, true, message);
 
-        protected static IApiResponse<T> Created<T>(T result, string message = "")
+        public static IApiResponse<T> Created<T>(T result, string message = "")
             => Build(result, HttpStatusCode.Created, true, message);
 
         // Para operações sem payload em sucesso (Update/Delete)
-        protected static IApiResponse<bool> NoContent(string message = "")
+        public static IApiResponse<bool> NoContent(string message = "")
             => Build(false, HttpStatusCode.NoContent, true, message);
 
         // NotFound/BadRequest/etc. (mantidos – já estavam corretos)
