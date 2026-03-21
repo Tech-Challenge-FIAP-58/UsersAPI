@@ -15,22 +15,49 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 using System;
 using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var serviceName = "user";
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .WriteTo.Console()
+    .WriteTo.GrafanaLoki("http://loki:3100",
+        labels: new[] { new LokiLabel { Key = "service", Value = serviceName } })
+    .CreateLogger();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(Log.Logger);
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName))
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddSource(serviceName)
+        .AddOtlpExporter(opts => { opts.Endpoint = new Uri("http://tempo:4317"); }))
+    .WithMetrics(metrics => metrics
+        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName))
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddPrometheusExporter());
+
 #region BUILDER
 builder.Services.AddProblemDetails();
-
-// Add services to the container.
 
 builder.RegisterConfigurations();
 builder.RegisterMassTransit();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -85,7 +112,6 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddProfile<UserProfile>();
 });
 
-// JWT Settings
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
@@ -108,21 +134,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 
 #region MIGRATION COM RETRY
-// Observação: este bloco roda **antes** do servidor iniciar. Ele tenta aplicar
-// migrations até 'maxAttempts' vezes, com backoff exponencial (limitado).
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     var dbContext = services.GetRequiredService<ApplicationDbContext>();
-
     const int maxAttempts = 10;
     for (int attempt = 1; attempt <= maxAttempts; attempt++)
     {
         try
         {
             logger.LogInformation("Tentando aplicar migrations (tentativa {Attempt}/{MaxAttempts})...", attempt, maxAttempts);
-            dbContext.Database.Migrate(); // aplica migrations pendentes (síncrono)
+            dbContext.Database.Migrate();
             logger.LogInformation("Migrations aplicadas com sucesso.");
             break;
         }
@@ -131,13 +154,11 @@ using (var scope = app.Services.CreateScope())
             logger.LogWarning(ex, "Falha ao aplicar migrations na tentativa {Attempt}.", attempt);
             if (attempt == maxAttempts)
             {
-                logger.LogError(ex, "Não foi possível aplicar migrations após {MaxAttempts} tentativas. Encerrando aplicação.", maxAttempts);
-                throw; // aborta a inicialização (você pode optar por não lançar e continuar)
+                logger.LogError(ex, "NÃ£o foi possÃ­vel aplicar migrations apÃ³s {MaxAttempts} tentativas. Encerrando aplicaÃ§Ã£o.", maxAttempts);
+                throw;
             }
-            // backoff simples (2s * attempt), limitado a 30s
             var delay = TimeSpan.FromSeconds(Math.Min(30, 2 * attempt));
-            logger.LogInformation("Aguardando {Delay} antes da próxima tentativa...", delay);
-            // usa Task.Delay para não bloquear a thread
+            logger.LogInformation("Aguardando {Delay} antes da prÃ³xima tentativa...", delay);
             await Task.Delay(delay);
         }
     }
@@ -145,37 +166,29 @@ using (var scope = app.Services.CreateScope())
 #endregion
 
 #region APP
-
 using (var scope = app.Services.CreateScope())
 {
     var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
     mapper.ConfigurationProvider.AssertConfigurationIsValid();
 }
 
-
 await DatabaseSeeder.SeedAsync(app.Services);
 
-//app.UseGlobalExceptionHandling();
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
-
 app.UseAuthentication();
-
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
-
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
-
 app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok("Healthy")).ExcludeFromDescription();
 app.MapControllers();
 
 app.Run();
-
 #endregion
