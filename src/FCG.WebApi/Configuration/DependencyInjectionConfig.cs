@@ -36,9 +36,6 @@ namespace FCG.WebApi.Configuration
                         });
                     });
 
-                    // opcional: melhora estabilidade
-                    cfg.UseHealthCheck(context);
-
                     cfg.ConfigureEndpoints(context);
                 });
             });
