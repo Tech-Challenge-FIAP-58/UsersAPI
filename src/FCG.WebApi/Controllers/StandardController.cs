@@ -7,7 +7,7 @@ using System.Net;
 namespace FCG.WebApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class StandardController : ControllerBase
     {
         protected async Task<IActionResult> TryMethodAsync<TResult>(
