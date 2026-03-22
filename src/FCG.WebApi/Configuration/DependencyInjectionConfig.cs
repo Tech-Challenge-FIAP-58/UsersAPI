@@ -1,5 +1,6 @@
 using FCG.Core.Models;
 using MassTransit;
+using System.Net.Security;
 using System.Security.Authentication;
 
 namespace FCG.WebApi.Configuration
@@ -33,6 +34,8 @@ namespace FCG.WebApi.Configuration
                         h.UseSsl(s =>
                         {
                             s.Protocol = SslProtocols.Tls12;
+
+                            s.ServerName = settings.Host; // O ServerName deve ser igual ao Host para validação do certificado SSL
                         });
                     });
 
