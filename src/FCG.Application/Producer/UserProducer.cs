@@ -9,7 +9,7 @@ public class UserProducer(ILogger<UserProducer> logger, IBus bus)
     public async Task PublishUserCreatedEvent(int userId, string email)
     {
         var endpoint = await bus.GetSendEndpoint(new Uri("queue:notification-queue"));
-        await bus.Send(new UserCreatedEvent
+        await endpoint.Send(new UserCreatedEvent
         {
             Destinatario = email,
             Assunto = "Bem-vindo ao FCG!",
