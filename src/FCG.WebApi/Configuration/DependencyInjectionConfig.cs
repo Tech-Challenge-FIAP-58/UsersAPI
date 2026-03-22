@@ -24,7 +24,7 @@ namespace FCG.WebApi.Configuration
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(settings.Host, settings.VirtualHost, h =>
+                    cfg.Host(settings.Host, "/", h =>
                     {
                         h.Username(settings.UserName);
                         h.Password(settings.Password);
