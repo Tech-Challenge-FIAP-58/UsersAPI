@@ -8,12 +8,14 @@ public class UserProducer(ILogger<UserProducer> logger, IBus bus)
 {
     public async Task PublishUserCreatedEvent(int userId, string email)
     {
-        await bus.Publish(new UserCreatedEvent
+        var endpoint = await bus.GetSendEndpoint(new Uri("queue:notification-queue"));
+        await bus.Send(new UserCreatedEvent
         {
-            UserId = userId,
-            Email = email
+            Destinatario = email,
+            Assunto = "Bem-vindo ao FCG!",
+            Corpo = $"Olá! Seu usuário com ID {userId} foi criado com sucesso."
         });
 
-        logger.LogInformation("UserCreatedEvent published to the queue.");
+        logger.LogInformation("UserCreatedEvent published to the notification-queue.");
 	}
 }

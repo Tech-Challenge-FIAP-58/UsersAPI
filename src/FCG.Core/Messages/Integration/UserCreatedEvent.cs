@@ -2,7 +2,8 @@
 {
 	public class UserCreatedEvent
 	{
-		public required int UserId { get; set; }
-		public required string Email { get; set; }
+		public required string Destinatario { get; set; }
+		public required string Assunto { get; set; }
+		public required string Corpo { get; set; }
 	}
 }
