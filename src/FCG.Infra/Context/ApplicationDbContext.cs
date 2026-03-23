@@ -3,15 +3,12 @@ using FCG.Core.Mediatr;
 using FCG.Core.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 using System.Text.Json;
 
 namespace FCG.Infra.Context
 {
     public class ApplicationDbContext(IMediatorHandler _mediatorHandler, DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        private readonly IMediatorHandler _mediatorHandler;
-
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
@@ -33,24 +30,7 @@ namespace FCG.Infra.Context
                 .SelectMany(e => e.GetForeignKeys())) relationship.DeleteBehavior = DeleteBehavior.ClientSetNull;
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-            ApplySoftDeleteQueryFilter(modelBuilder);
             base.OnModelCreating(modelBuilder);
-        }
-
-        private static void ApplySoftDeleteQueryFilter(ModelBuilder modelBuilder)
-        {
-            var entityTypes = modelBuilder.Model.GetEntityTypes()
-                .Where(t => typeof(EntityBase).IsAssignableFrom(t.ClrType));
-
-            foreach (var entityType in entityTypes)
-            {
-                var parameter = Expression.Parameter(entityType.ClrType, "e");
-                var isDeletedProperty = Expression.Property(parameter, nameof(EntityBase.IsDeleted));
-                var compare = Expression.Equal(isDeletedProperty, Expression.Constant(false));
-                var lambda = Expression.Lambda(compare, parameter);
-
-                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
-            }
         }
 
 
@@ -59,30 +39,16 @@ namespace FCG.Infra.Context
         {
             ChangeTracker.DetectChanges();
 
-            foreach (var entry in ChangeTracker.Entries().Where(entry => entry.Entity.GetType().GetProperty("CreatedAt") != null))
+            foreach (var entry in ChangeTracker.Entries().Where(entry => entry.Entity.GetType().GetProperty("CreatedAtUtc") != null))
             {
                 if (entry.State == EntityState.Added)
                 {
-                    entry.Property("CreatedAt").CurrentValue = DateTime.Now;
+                    entry.Property("CreatedAtUtc").CurrentValue = DateTime.UtcNow;
                 }
 
                 if (entry.State == EntityState.Modified)
                 {
-                    entry.Property("CreatedAt").IsModified = false;
-                    entry.Property("UpdatedAt").CurrentValue = DateTime.Now;
-                }
-
-                if (entry.State == EntityState.Deleted)
-                {
-                    foreach (var property in entry.Properties)
-                    {
-                        property.IsModified = false;
-                    }
-
-                    entry.Property("IsDeleted").IsModified = true;
-                    entry.Property("DeletedAt").IsModified = true;
-                    entry.Property("DeletedAt").CurrentValue = DateTime.Now;
-                    entry.State = EntityState.Modified;
+                    entry.Property("CreatedAtUtc").IsModified = false;
                 }
             }
 
@@ -93,22 +59,27 @@ namespace FCG.Infra.Context
             var domainEvents = domainEntities
                 .SelectMany(x => x.Entity.Notifications)
                 .ToList();
-
-            foreach (var entry in domainEntities)
-                foreach (var domainEvent in entry.Entity.Notifications)
-                    StoredEvents.Add(new StoredEvent(
-                        entry.Entity.Id,
-                        entry.Entity.GetType().Name,
-                        domainEvent.GetType().Name,
-                        JsonSerializer.Serialize((object)domainEvent)
-                    ));
-
-            domainEntities.ForEach(e => e.Entity.ClearEvents());
-
             var affectedRows = await base.SaveChangesAsync(cancellationToken);
 
             if (domainEvents.Count > 0)
             {
+                foreach (var entry in domainEntities)
+                {
+                    foreach (var domainEvent in entry.Entity.Notifications)
+                    {
+                        StoredEvents.Add(new StoredEvent(
+                            entry.Entity.Id,
+                            entry.Entity.GetType().Name,
+                            domainEvent.GetType().Name,
+                            JsonSerializer.Serialize((object)domainEvent)
+                        ));
+                    }
+                }
+
+                domainEntities.ForEach(e => e.Entity.ClearEvents());
+
+                await base.SaveChangesAsync(cancellationToken);
+
                 var tasks = domainEvents.Select(e => _mediatorHandler.PublishEvent(e));
                 await Task.WhenAll(tasks);
             }

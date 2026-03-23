@@ -12,22 +12,28 @@ namespace FCG.Core.Models
         public string Address { get; private set; }
         public bool IsAdmin { get; private set; }
 
-        private readonly List<UserRole> _items = [];
+        public virtual ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
 
-        public IReadOnlyCollection<UserRole> UserRoles => _items;
+        protected User() { }
 
-        public override Event CreateDomainEvent(DomainEventAction action) => action switch
+        public static User Create(string name, string email, string password, string cpf, string address, bool isAdmin)
         {
-            DomainEventAction.Created => new UserCreatedDomainEvent(ToSnapshot()),
-            DomainEventAction.Updated => new UserUpdatedDomainEvent(ToSnapshot()),
-            DomainEventAction.Deleted => new UserDeletedDomainEvent(ToSnapshot()),
-            _ => throw new ArgumentOutOfRangeException(nameof(action), action, null)
-        };
+            var user = new User
+            {
+                Name = name,
+                Email = email,
+                Password = password,
+                Cpf = cpf,
+                Address = address,
+                IsAdmin = isAdmin
+            };
+
+            user.AddEvent(new UserCreatedDomainEvent(user.ToSnapshot()));
+            return user;
+        }
 
         public void Delete()
         {
-            IsDeleted = true;
-            DeletedAt = DateTime.UtcNow;
             AddEvent(new UserDeletedDomainEvent(ToSnapshot()));
         }
 
@@ -41,6 +47,18 @@ namespace FCG.Core.Models
             AddEvent(new UserUpdatedDomainEvent(ToSnapshot()));
         }
 
+        public void UpdatePassword(string password)
+        {
+            Password = password;
+            AddEvent(new UserUpdatedDomainEvent(ToSnapshot()));
+        }
+
+        public void SetAsAdmin()
+        {
+            IsAdmin = true;
+            AddEvent(new UserUpdatedDomainEvent(ToSnapshot()));
+        }
+
         private UserSnapshot ToSnapshot() => new(
             Id,
             Name,
@@ -48,9 +66,14 @@ namespace FCG.Core.Models
             Cpf,
             Address,
             IsAdmin,
-            CreatedAt,
-            UpdatedAt,
-            DeletedAt,
-            IsDeleted);
+            CreatedAtUtc);
+
+        public override Event CreateDomainEvent(DomainEventAction action) => action switch
+        {
+            DomainEventAction.Created => new UserCreatedDomainEvent(ToSnapshot()),
+            DomainEventAction.Updated => new UserUpdatedDomainEvent(ToSnapshot()),
+            DomainEventAction.Deleted => new UserDeletedDomainEvent(ToSnapshot()),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action, null)
+        };
     }
 }

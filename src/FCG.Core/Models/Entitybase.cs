@@ -1,19 +1,16 @@
-﻿using FCG.Core.Mediatr;
+﻿using FCG.Core.Events;
+using FCG.Core.Mediatr;
 
 namespace FCG.Core.Models
 {
     public abstract class EntityBase
     {
-        public Guid Id { get; set; }
-        public bool IsDeleted { get; protected set; } = false;
-        public DateTime CreatedAt { get; protected set; }
-        public DateTime? UpdatedAt { get; protected set; }
-        public DateTime? DeletedAt { get; protected set; }
+        public int Id { get; set; }
+        public DateTime CreatedAtUtc { get; protected set; }
 
         protected EntityBase()
         {
-            Id = Guid.NewGuid();
-            CreatedAt = DateTime.UtcNow;
+            CreatedAtUtc = DateTime.UtcNow;
         }
 
         private List<Event> _notifications;

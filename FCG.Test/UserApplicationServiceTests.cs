@@ -27,16 +27,11 @@ namespace FCG.Test
         }
 
         private static User CreateUser(int id = 1)
-            => new()
-            {
-                Id = id,
-                Name = "User Name",
-                Email = "user@example.com",
-                Password = "oldhash",
-                Cpf = "12345678901",
-                Address = "Address",
-                IsAdmin = false
-            };
+        {
+            var user = User.Create("User Name", "user@example.com", "oldhash", "12345678901", "Address", false);
+            user.Id = id;
+            return user;
+        }
 
         [Fact]
         public async Task GetAll_ReturnsMappedUsersAndOk()
@@ -103,8 +98,7 @@ namespace FCG.Test
             _mapperMock.Setup(m => m.Map(It.IsAny<UserUpdateDto>(), It.IsAny<User>()))
                        .Callback<UserUpdateDto, User>((s, d) =>
                        {
-                           // mimic partial map behavior for test: apply Name if provided
-                           if (s.Name != null) d.Name = s.Name;
+                           d.Update(s.Name, s.Email, s.Address, null);
                        });
 
             _passwordHasherMock.Setup(h => h.Hash(dto.Password)).Returns("hashed-password");

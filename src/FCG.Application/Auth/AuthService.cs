@@ -59,7 +59,7 @@ namespace FCG.Application.Auth
                 return Conflict<int>("CPF já cadastrado.");
 
             var entity = _mapper.Map<User>(dto);
-            entity.Password = _passwordHasher.Hash(dto.Password);
+            entity.UpdatePassword(_passwordHasher.Hash(dto.Password));
 
             var id = await _repository.Create(entity);
             await userProducer.PublishUserCreatedEvent(id, entity.Email);
@@ -85,8 +85,8 @@ namespace FCG.Application.Auth
                 return Conflict<int>("CPF já cadastrado.");
 
             var entity = _mapper.Map<User>(dto);
-            entity.Password = _passwordHasher.Hash(dto.Password);
-            entity.IsAdmin = true;
+            entity.UpdatePassword(_passwordHasher.Hash(dto.Password));
+            entity.SetAsAdmin();
 
             var id = await _repository.Create(entity);
             return Created(id, "Administrador registrado com sucesso.");

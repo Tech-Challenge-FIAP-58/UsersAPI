@@ -40,15 +40,7 @@ namespace FCG.Test
         [Fact]
         public void UserUpdateDto_MapTo_User_DoesNotOverwriteCpfOrPasswordWhenNull()
         {
-            var user = new User
-            {
-                Name = "Old",
-                Email = "old@x.com",
-                Address = "OldAddr",
-                Cpf = "11122233344",
-                Password = "oldhash",
-                IsAdmin = false
-            };
+            var user = User.Create("Old", "old@x.com", "oldhash", "11122233344", "OldAddr", false);
 
             var update = new UserUpdateDto
             {

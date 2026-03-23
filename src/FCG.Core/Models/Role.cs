@@ -33,8 +33,6 @@ namespace FCG.Core.Models
 
         public void Delete()
         {
-            IsDeleted = true;
-            DeletedAt = DateTime.UtcNow;
             AddEvent(new RoleDeletedDomainEvent(ToSnapshot()));
         }
 
@@ -50,9 +48,6 @@ namespace FCG.Core.Models
             Id,
             Name,
             Description,
-            CreatedAt,
-            UpdatedAt,
-            DeletedAt,
-            IsDeleted);
+            CreatedAtUtc);
     }
 }

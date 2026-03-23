@@ -1,8 +1,8 @@
-﻿using AutoMapper;
+﻿using FCG.Core.Interfaces.Repository;
+using FCG.Core.Interfaces.Utils;
 using FCG.Application.Inputs;
 using FCG.Application.Web;
-using FCG.Core.Interfaces.Repository;
-using FCG.Core.Interfaces.Utils;
+using AutoMapper;
 
 namespace FCG.Application.Services
 {
@@ -40,7 +40,7 @@ namespace FCG.Application.Services
             _mapper.Map(dto, user);
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
-                user.Password = _passwordHasher.Hash(dto.Password);
+                user.UpdatePassword(_passwordHasher.Hash(dto.Password));
 
             await _userRepository.Update(id, user);
             return NoContent();
@@ -52,6 +52,8 @@ namespace FCG.Application.Services
 
             if (user == null)
                 return NotFound<bool>("Usuário não encontrado para remoção.");
+
+            user.Delete();
 
             await _userRepository.Remove(user);
 

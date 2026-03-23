@@ -58,7 +58,8 @@ namespace FCG.Test
         public async Task Login_InvalidPassword_ReturnsUnauthorized()
         {
             var dto = new LoginDto { Email = "a@b.com", Password = "x" };
-            var user = new User { Id = 1, Email = dto.Email, Password = "hash", Name = "N", Cpf = "123", Address = "A", IsAdmin = false };
+            var user = User.Create("N", dto.Email, "hash", "123", "A", false);
+            user.Id = 1;
             _repo.Setup(r => r.FindByEmailAsync(dto.Email)).ReturnsAsync(user);
             _hasher.Setup(h => h.Verify(dto.Password, user.Password)).Returns(false);
 
@@ -72,7 +73,8 @@ namespace FCG.Test
         public async Task Login_Valid_ReturnsToken()
         {
             var dto = new LoginDto { Email = "a@b.com", Password = "x" };
-            var user = new User { Id = 1, Email = dto.Email, Password = "hash", Name = "N", Cpf = "123", Address = "A", IsAdmin = false };
+            var user = User.Create("N", dto.Email, "hash", "123", "A", false);
+            user.Id = 1;
             _repo.Setup(r => r.FindByEmailAsync(dto.Email)).ReturnsAsync(user);
             _hasher.Setup(h => h.Verify(dto.Password, user.Password)).Returns(true);
             _repo.Setup(r => r.GenerateToken(It.IsAny<IConfiguration>(), user)).Returns("my-token");
@@ -103,7 +105,7 @@ namespace FCG.Test
             Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
 
             // Garante que o bus NÃO foi publicado quando há conflito de email
-            _busMock.Verify(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+            _busMock.Verify(b => b.GetSendEndpoint(It.IsAny<Uri>()), Times.Never);
         }
 
         [Fact]
@@ -117,7 +119,8 @@ namespace FCG.Test
                 Cpf = "12345678909",
                 Password = "Abc123!45"
             };
-            var mapped = new User { Email = dto.Email, Name = dto.Name, Cpf = dto.Cpf, Address = dto.Address, Password = "Abc123!45", IsAdmin = false };
+            var mapped = User.Create(dto.Name, dto.Email, "Abc123!45", dto.Cpf, dto.Address, false);
+            var endpointMock = new Mock<ISendEndpoint>();
 
             _repo.Setup(r => r.ExistsByEmailAsync(dto.Email)).ReturnsAsync(false);
             _repo.Setup(r => r.ExistsByCpfAsync(dto.Cpf)).ReturnsAsync(false);
@@ -125,8 +128,8 @@ namespace FCG.Test
             _hasher.Setup(h => h.Hash(dto.Password)).Returns("hashed");
             _repo.Setup(r => r.Create(mapped)).ReturnsAsync(42);
 
-            // Configura o IBus para aceitar Publish
-            _busMock.Setup(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask).Verifiable();
+            _busMock.Setup(b => b.GetSendEndpoint(It.IsAny<Uri>())).ReturnsAsync(endpointMock.Object);
+            endpointMock.Setup(e => e.Send(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask).Verifiable();
 
             var response = await _service.Register(dto);
 
@@ -135,7 +138,11 @@ namespace FCG.Test
             _hasher.Verify(h => h.Hash(dto.Password), Times.Once);
             _repo.Verify(r => r.Create(mapped), Times.Once);
 
-            _busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.UserId == 42 && e.Email == dto.Email), It.IsAny<CancellationToken>()), Times.Once);
+            _busMock.Verify(b => b.GetSendEndpoint(new Uri("queue:notification-queue")), Times.Once);
+            endpointMock.Verify(e => e.Send(
+                It.Is<UserCreatedEvent>(m => m.Destinatario == dto.Email && m.Corpo.Contains("42")),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         }
     }
 }

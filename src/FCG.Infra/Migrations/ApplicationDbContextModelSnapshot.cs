@@ -25,7 +25,36 @@ namespace FCG.Infra.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("UserService.Core.Models.Role", b =>
+            modelBuilder.Entity("FCG.Core.Events.StoredEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AggregateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AggregateType")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("OccurredOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StoredEvents", (string)null);
+                });
+
+            modelBuilder.Entity("FCG.Core.Models.Role", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -37,11 +66,11 @@ namespace FCG.Infra.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
@@ -51,7 +80,7 @@ namespace FCG.Infra.Migrations
                     b.ToTable("Roles", (string)null);
                 });
 
-            modelBuilder.Entity("UserService.Core.Models.User", b =>
+            modelBuilder.Entity("FCG.Core.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -61,11 +90,11 @@ namespace FCG.Infra.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Cpf")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -90,7 +119,7 @@ namespace FCG.Infra.Migrations
                     b.ToTable("User", (string)null);
                 });
 
-            modelBuilder.Entity("UserService.Core.Models.UserRole", b =>
+            modelBuilder.Entity("FCG.Core.Models.UserRole", b =>
                 {
                     b.Property<int>("UserId")
                         .HasColumnType("INT");
@@ -105,15 +134,15 @@ namespace FCG.Infra.Migrations
                     b.ToTable("UserRoles", (string)null);
                 });
 
-            modelBuilder.Entity("UserService.Core.Models.UserRole", b =>
+            modelBuilder.Entity("FCG.Core.Models.UserRole", b =>
                 {
-                    b.HasOne("UserService.Core.Models.Role", "Role")
+                    b.HasOne("FCG.Core.Models.Role", "Role")
                         .WithMany("UserRoles")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("UserService.Core.Models.User", "User")
+                    b.HasOne("FCG.Core.Models.User", "User")
                         .WithMany("UserRoles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -124,12 +153,12 @@ namespace FCG.Infra.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("UserService.Core.Models.Role", b =>
+            modelBuilder.Entity("FCG.Core.Models.Role", b =>
                 {
                     b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("UserService.Core.Models.User", b =>
+            modelBuilder.Entity("FCG.Core.Models.User", b =>
                 {
                     b.Navigation("UserRoles");
                 });

@@ -41,8 +41,6 @@ public class RoleTests
 
         role.Delete();
 
-        Assert.True(role.IsDeleted);
-        Assert.NotNull(role.DeletedAt);
         Assert.NotNull(role.Notifications);
         Assert.Contains(role.Notifications!, e => e is RoleDeletedDomainEvent);
     }

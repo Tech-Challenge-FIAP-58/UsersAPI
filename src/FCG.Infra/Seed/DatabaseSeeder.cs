@@ -66,15 +66,7 @@ namespace FCG.Infra.Seed
 
             var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
-            var adminUser = new User
-            {
-                Name = "Administrador",
-                Email = adminEmail,
-                Cpf = adminCpf,
-                Address = "Localhost",
-                Password = passwordHasher.Hash(adminPassword),
-                IsAdmin = true,
-            };
+            var adminUser = User.Create(adminEmail, adminCpf, "Administrador", "Localhost", passwordHasher.Hash(adminPassword), isAdmin: true);
 
             context.Users.Add(adminUser);
             await context.SaveChangesAsync();
