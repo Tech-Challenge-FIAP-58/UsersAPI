@@ -38,11 +38,7 @@ namespace FCG.Infra.Seed
             {
                 logger.LogInformation("Role 'Admin' não encontrada. Criando role padrão.");
 
-                adminRole = new Role
-                {
-                    Name = "Admin",
-                    Description = "Administrador do sistema",
-                };
+                adminRole = Role.Create("Admin", "Administrador do sistema");
 
                 context.Roles.Add(adminRole);
                 await context.SaveChangesAsync();

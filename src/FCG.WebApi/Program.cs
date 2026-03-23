@@ -5,22 +5,26 @@ using FCG.Application.Producer;
 using FCG.Application.Services;
 using FCG.Core.Interfaces.Repository;
 using FCG.Core.Interfaces.Utils;
+using FCG.Core.Mediatr;
 using FCG.Core.Utils;
 using FCG.Infra.Context;
 using FCG.Infra.Repository;
 using FCG.Infra.Seed;
 using FCG.WebApi.Configuration;
 using FCG.WebApi.Middlewares;
+using MassTransit;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 using System;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 
@@ -100,6 +104,9 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserApplicationService, UserApplicationService>();
+
+builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
+builder.Services.AddScoped<IMediatorHandler, MediatorHandler>();
 
 builder.Services.AddAutoMapper(cfg =>
 {

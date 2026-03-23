@@ -11,6 +11,7 @@ namespace FCG.Application.Services
         private readonly IPasswordHasher _passwordHasher = passwordHasher;
         private readonly IUserRepository _userRepository = repository;
         private readonly IMapper _mapper = mapper;
+
         public async Task<IApiResponse<IEnumerable<UserResponseDto>>> GetAll()
         {
             var users = await _userRepository.GetAll();
