@@ -1,47 +1,112 @@
-name: Deploy
+name: Build & Deploy to EKS
 
 on:
-  workflow_run:
-    workflows: ["Build Docker Image"]
-    types:
-      - completed
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER: fiap-fcg
+  NAMESPACE: fiap-fcg
+  ECR_BASE: ${{ secrets.AWS_ECR }}.dkr.ecr.us-east-1.amazonaws.com
 
 jobs:
-
-  deploy:
-
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
+  build-and-deploy:
     runs-on: ubuntu-latest
 
-    concurrency:
-      group: deploy-cluster
-      cancel-in-progress: false
-
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set AKS Context
-        uses: azure/aks-set-context@v4
+      - name: Login no ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build e Push — users-api
+        run: |
+          IMAGE=${{ env.ECR_BASE }}/fiap-fcg/users-api:${{ github.sha }}
+          docker build \
+            --platform linux/amd64 \
+            -t $IMAGE \
+            -f UsersAPI/src/FCG.WebApi/Dockerfile \
+            UsersAPI/
+          docker push $IMAGE
+          docker tag $IMAGE ${{ env.ECR_BASE }}/fiap-fcg/users-api:latest
+          docker push ${{ env.ECR_BASE }}/fiap-fcg/users-api:latest
+
+      - name: Build e Push — catalog-api
+        run: |
+          IMAGE=${{ env.ECR_BASE }}/fiap-fcg/catalog-api:${{ github.sha }}
+          docker build \
+            --platform linux/amd64 \
+            -t $IMAGE \
+            -f CatalogAPI/src/FCG.Catalog.WebApi/Dockerfile \
+            CatalogAPI/
+          docker push $IMAGE
+          docker tag $IMAGE ${{ env.ECR_BASE }}/fiap-fcg/catalog-api:latest
+          docker push ${{ env.ECR_BASE }}/fiap-fcg/catalog-api:latest
+
+      - name: Build e Push — notifications-api
+        run: |
+          IMAGE=${{ env.ECR_BASE }}/fiap-fcg/notifications-api:${{ github.sha }}
+          docker build \
+            --platform linux/amd64 \
+            -t $IMAGE \
+            -f NotificationsAPI/src/FCG.Notifications/Dockerfile \
+            NotificationsAPI/
+          docker push $IMAGE
+          docker tag $IMAGE ${{ env.ECR_BASE }}/fiap-fcg/notifications-api:latest
+          docker push ${{ env.ECR_BASE }}/fiap-fcg/notifications-api:latest
+
+      - name: Build e Push — payments-api
+        run: |
+          IMAGE=${{ env.ECR_BASE }}/fiap-fcg/payments-api:${{ github.sha }}
+          docker build \
+            --platform linux/amd64 \
+            -t $IMAGE \
+            -f PaymentsAPI/src/FCG.Payments/Dockerfile \
+            PaymentsAPI/
+          docker push $IMAGE
+          docker tag $IMAGE ${{ env.ECR_BASE }}/fiap-fcg/payments-api:latest
+          docker push ${{ env.ECR_BASE }}/fiap-fcg/payments-api:latest
+
+      - name: Instalar kubectl
+        uses: azure/setup-kubectl@v3
         with:
-          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
-          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+          version: 'v1.29.0'
 
-      - name: Kubernetes Deploy
+      - name: Atualizar kubeconfig
         run: |
-          kubectl apply -k k8s/overlays/default
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER }} \
+            --region ${{ env.AWS_REGION }}
 
-      - name: Wait Rollout
+      - name: Rollout restart dos pods
         run: |
-          kubectl rollout status deployment/fcg-api
+          kubectl rollout restart deployment/users-api \
+            deployment/catalog-api \
+            deployment/notifications-api \
+            deployment/payments-api \
+            -n ${{ env.NAMESPACE }}
 
-      - name: Smoke Tests
+      - name: Aguardar rollout concluir
         run: |
-          chmod +x scripts/smoke-tests.sh
-          ./scripts/smoke-tests.sh
+          kubectl rollout status deployment/users-api -n ${{ env.NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/catalog-api -n ${{ env.NAMESPACE }} --timeout=120s
+
+      - name: Exibir URL do Load Balancer
+        run: |
+          LB=$(kubectl get svc -n ingress-nginx ingress-nginx-controller \
+            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "✅ Deploy concluído!"
+          echo "   UsersAPI  : http://${LB}/users/health"
+          echo "   CatalogAPI: http://${LB}/catalog/health"
+          echo "   Swagger   : http://${LB}/users/swagger/index.html"
