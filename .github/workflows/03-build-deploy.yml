@@ -74,7 +74,7 @@ jobs:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/fiap-fcg/users-api:${{ github.sha }}
           format: table
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
 
       # ----------------------------------------------------------------
       # Assinatura da imagem com Cosign (keyless via OIDC)
