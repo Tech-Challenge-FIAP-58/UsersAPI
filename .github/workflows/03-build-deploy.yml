@@ -103,7 +103,7 @@ jobs:
       - name: Aguardar rollout
         run: |
           kubectl rollout status deployment/users-api \
-            -n ${{ env.NAMESPACE }} --timeout=120s
+            -n ${{ env.NAMESPACE }} --timeout=300s
 
       - name: Exibir URL do Load Balancer
         run: |
