@@ -1,17 +1,19 @@
 name: Quality Gate
 
+# Roda nos mesmos eventos do CI, em paralelo.
+# workflow_run foi removido porque: (1) dependency-review-action exige pull_request,
+# (2) workflow_run sempre executa na branch default, não na branch do PR.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - develop
 
 jobs:
-
   quality:
-
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: ubuntu-latest
 
     permissions:
@@ -19,13 +21,11 @@ jobs:
       contents: read
 
     steps:
-
       - uses: actions/checkout@v4
 
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
-
-      - name: Trivy FS Scan
+      # Analisa vulnerabilidades no sistema de arquivos (dependências, configs).
+      # Substitui o dependency-review-action, que só funciona em eventos pull_request.
+      - name: Trivy — Scan de dependências (fs)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
