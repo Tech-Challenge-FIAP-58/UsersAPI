@@ -14,17 +14,22 @@ namespace FCG.Test
         [Fact]
         public async Task PublishUserCreatedEvent_CallsBusPublish()
         {
-            var busMock = new Mock<IBus>();
-            busMock.Setup(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()))
-                   .Returns(Task.CompletedTask)
-                   .Verifiable();
+            var publishMock = new Mock<IPublishEndpoint>();
+            publishMock
+                .Setup(p => p.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
 
             var loggerMock = new Mock<ILogger<UserProducer>>();
-            var producer = new UserProducer(loggerMock.Object, busMock.Object);
+            var producer = new UserProducer(loggerMock.Object, publishMock.Object);
 
             await producer.PublishUserCreatedEvent(10, "a@b.com");
 
-            busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.Destinatario == "a@b.com"), It.IsAny<CancellationToken>()), Times.Once);
+            publishMock.Verify(
+                p => p.Publish(
+                    It.Is<UserCreatedEvent>(e => e.Corpo.Contains("10") && e.Destinatario == "a@b.com"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
     }
 }

@@ -82,7 +82,7 @@ namespace FCG.Test
             Assert.False(response.IsSuccess);
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
             Assert.Null(response.ResultValue);
-            Assert.Contains("n„o encontrado", response.Message, System.StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("n√£o encontrado", response.Message, System.StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]

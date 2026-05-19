@@ -21,7 +21,7 @@ namespace FCG.Test
         private readonly Mock<IConfiguration> _config = new();
 
         // mocks usados apenas para construir o UserProducer real e verificar chamadas ao IBus
-        private readonly Mock<IBus> _busMock = new();
+        private readonly Mock<IPublishEndpoint> _publishMock = new();
         private readonly Mock<ILogger<UserProducer>> _producerLoggerMock = new();
 
         private readonly UserProducer _producer;
@@ -29,7 +29,7 @@ namespace FCG.Test
 
         public AuthServiceTests()
         {
-            _producer = new UserProducer(_producerLoggerMock.Object, _busMock.Object);
+            _producer = new UserProducer(_producerLoggerMock.Object, _publishMock.Object);
             _service = new AuthService(_mapper.Object, _hasher.Object, _repo.Object, _config.Object, _producer);
         }
 
@@ -102,8 +102,8 @@ namespace FCG.Test
             Assert.False(response.IsSuccess);
             Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
 
-            // Garante que o bus N�O foi publicado quando h� conflito de email
-            _busMock.Verify(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+            // Garante que o bus NÃO foi publicado quando há conflito de email
+            _publishMock.Verify(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace FCG.Test
             _repo.Setup(r => r.Create(mapped)).ReturnsAsync(42);
 
             // Configura o IBus para aceitar Publish
-            _busMock.Setup(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask).Verifiable();
+            _publishMock.Setup(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask).Verifiable();
 
             var response = await _service.Register(dto);
 
@@ -135,7 +135,7 @@ namespace FCG.Test
             _hasher.Verify(h => h.Hash(dto.Password), Times.Once);
             _repo.Verify(r => r.Create(mapped), Times.Once);
 
-            _busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.Destinatario == dto.Email), It.IsAny<CancellationToken>()), Times.Once);
+            _publishMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.Corpo.Contains("42") && e.Destinatario == dto.Email), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
