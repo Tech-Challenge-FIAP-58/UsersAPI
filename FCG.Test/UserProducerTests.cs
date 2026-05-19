@@ -24,7 +24,7 @@ namespace FCG.Test
 
             await producer.PublishUserCreatedEvent(10, "a@b.com");
 
-            busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.UserId == 10 && e.Email == "a@b.com"), It.IsAny<CancellationToken>()), Times.Once);
+            busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.Destinatario == "a@b.com"), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

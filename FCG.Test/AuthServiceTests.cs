@@ -102,7 +102,7 @@ namespace FCG.Test
             Assert.False(response.IsSuccess);
             Assert.Equal(System.Net.HttpStatusCode.Conflict, response.StatusCode);
 
-            // Garante que o bus NÃO foi publicado quando há conflito de email
+            // Garante que o bus Nï¿½O foi publicado quando hï¿½ conflito de email
             _busMock.Verify(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -135,7 +135,7 @@ namespace FCG.Test
             _hasher.Verify(h => h.Hash(dto.Password), Times.Once);
             _repo.Verify(r => r.Create(mapped), Times.Once);
 
-            _busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.UserId == 42 && e.Email == dto.Email), It.IsAny<CancellationToken>()), Times.Once);
+            _busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.Destinatario == dto.Email), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
