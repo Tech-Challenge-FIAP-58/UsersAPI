@@ -13,9 +13,12 @@ namespace FCG.Infra.Context
 			_configuration = configuration;
 
 			var connectionString = configuration.GetConnectionString("MongoDb");
-			var mongoUrl = MongoUrl.Create(connectionString);
-			var mongoClient = new MongoClient(mongoUrl);
-			_database = mongoClient.GetDatabase(mongoUrl.DatabaseName);
+			if (!string.IsNullOrWhiteSpace(connectionString))
+			{
+				var mongoUrl = MongoUrl.Create(connectionString);
+				var mongoClient = new MongoClient(mongoUrl);
+				_database = mongoClient.GetDatabase(mongoUrl.DatabaseName);
+			}
 		}
 
 		public IMongoDatabase? Database => _database;
