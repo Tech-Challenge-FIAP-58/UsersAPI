@@ -6,6 +6,7 @@ using FCG.Core.Interfaces.Repository;
 using FCG.Core.Interfaces.Utils;
 using FCG.Core.Messages.Integration;
 using FCG.Core.Models;
+using FCG.Infra.Repository;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -23,13 +24,14 @@ namespace FCG.Test
         // mocks usados apenas para construir o UserProducer real e verificar chamadas ao IBus
         private readonly Mock<IPublishEndpoint> _publishMock = new();
         private readonly Mock<ILogger<UserProducer>> _producerLoggerMock = new();
+        private readonly Mock<IEventLogRepository> _eventLogRepoMock = new();
 
-        private readonly UserProducer _producer;
+		private readonly UserProducer _producer;
         private readonly AuthService _service;
 
         public AuthServiceTests()
         {
-            _producer = new UserProducer(_producerLoggerMock.Object, _publishMock.Object);
+            _producer = new UserProducer(_producerLoggerMock.Object, _publishMock.Object, _eventLogRepoMock.Object);
             _service = new AuthService(_mapper.Object, _hasher.Object, _repo.Object, _config.Object, _producer);
         }
 
