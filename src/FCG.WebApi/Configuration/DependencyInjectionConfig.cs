@@ -1,7 +1,5 @@
 using FCG.Core.Models;
 using MassTransit;
-using System.Net.Security;
-using System.Security.Authentication;
 
 namespace FCG.WebApi.Configuration
 {
@@ -25,18 +23,12 @@ namespace FCG.WebApi.Configuration
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(settings.Host, 5671, "/", h =>
+                    cfg.Host(settings.Host, (ushort)settings.Port, settings.VirtualHost, h =>
                     {
                         h.Username(settings.UserName);
                         h.Password(settings.Password);
-
-                        // 🔥 ESSENCIAL para Amazon MQ
-                        h.UseSsl(s =>
-                        {
-                            s.Protocol = SslProtocols.Tls12;
-
-                            s.ServerName = settings.Host; // O ServerName deve ser igual ao Host para validação do certificado SSL
-                        });
+                        if (settings.UseSsl)
+                            h.UseSsl(ssl => ssl.Protocol = System.Security.Authentication.SslProtocols.Tls12);
                     });
 
                     cfg.ConfigureEndpoints(context);

@@ -60,6 +60,7 @@ builder.Services.AddSwaggerGen(c =>
         Title = "FIAP Cloud Games",
         Version = "v1"
     });
+    c.AddServer(new OpenApiServer { Url = "/users", Description = "Via Load Balancer" });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
     {
         Name = "JWT Authentication",
@@ -171,11 +172,8 @@ using (var scope = app.Services.CreateScope())
 
 await DatabaseSeeder.SeedAsync(app.Services);
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.UseHttpsRedirection();

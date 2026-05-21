@@ -6,5 +6,7 @@
 		public required string VirtualHost { get; set; }
 		public required string UserName { get; set; }
 		public required string Password { get; set; }
+		public int Port { get; set; } = 5672;
+		public bool UseSsl { get; set; } = false;
 	}
 }
