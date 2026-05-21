@@ -1,11 +1,9 @@
-using System.Threading;
-using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
 using FCG.Application.Producer;
 using FCG.Core.Messages.Integration;
-using Xunit;
+using FCG.Infra.Repository;
 
 namespace FCG.Test
 {
@@ -14,14 +12,15 @@ namespace FCG.Test
         [Fact]
         public async Task PublishUserCreatedEvent_CallsBusPublish()
         {
-            var publishMock = new Mock<IPublishEndpoint>();
+            var eventLogRepoMock = new Mock<IEventLogRepository>();
+			var publishMock = new Mock<IPublishEndpoint>();
             publishMock
                 .Setup(p => p.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             var loggerMock = new Mock<ILogger<UserProducer>>();
-            var producer = new UserProducer(loggerMock.Object, publishMock.Object);
+            var producer = new UserProducer(loggerMock.Object, publishMock.Object, eventLogRepoMock.Object);
 
             await producer.PublishUserCreatedEvent(10, "a@b.com");
 
