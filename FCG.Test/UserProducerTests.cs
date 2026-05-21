@@ -1,11 +1,9 @@
-using System.Threading;
-using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
 using FCG.Application.Producer;
 using FCG.Core.Messages.Integration;
-using Xunit;
+using FCG.Infra.Repository;
 
 namespace FCG.Test
 {
@@ -14,17 +12,23 @@ namespace FCG.Test
         [Fact]
         public async Task PublishUserCreatedEvent_CallsBusPublish()
         {
-            var busMock = new Mock<IBus>();
-            busMock.Setup(b => b.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()))
-                   .Returns(Task.CompletedTask)
-                   .Verifiable();
+            var eventLogRepoMock = new Mock<IEventLogRepository>();
+			var publishMock = new Mock<IPublishEndpoint>();
+            publishMock
+                .Setup(p => p.Publish(It.IsAny<UserCreatedEvent>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
 
             var loggerMock = new Mock<ILogger<UserProducer>>();
-            var producer = new UserProducer(loggerMock.Object, busMock.Object);
+            var producer = new UserProducer(loggerMock.Object, publishMock.Object, eventLogRepoMock.Object);
 
             await producer.PublishUserCreatedEvent(10, "a@b.com");
 
-            busMock.Verify(b => b.Publish(It.Is<UserCreatedEvent>(e => e.UserId == 10 && e.Email == "a@b.com"), It.IsAny<CancellationToken>()), Times.Once);
+            publishMock.Verify(
+                p => p.Publish(
+                    It.Is<UserCreatedEvent>(e => e.Corpo.Contains("10") && e.Destinatario == "a@b.com"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
     }
 }

@@ -10,8 +10,8 @@ namespace FCG.Test
         [InlineData("11111111111", false)]
         [InlineData("", false)]
         [InlineData(null, false)]
-        // Substitua o CPF abaixo por um CPF v·lido conforme sua implementaÁ„o de teste
-        [InlineData("12345678909", true)]
+        // Substitua o CPF abaixo por um CPF v√°lido conforme sua implementa√ß√£o de teste
+        [InlineData("03066987140", true)]
         public void IsCpf_VariousCases_ReturnsExpected(string? cpf, bool expected)
         {
             var actual = ValidaCpf.IsCpf(cpf);
@@ -26,7 +26,7 @@ namespace FCG.Test
 
             var invalid = ValidaCpf.ValidarCpf("invalid", null);
             Assert.NotNull(invalid);
-            Assert.Equal("CPF inv·lido.", invalid?.ErrorMessage);
+            Assert.Equal("CPF inv√°lido.", invalid?.ErrorMessage);
         }
     }
 }

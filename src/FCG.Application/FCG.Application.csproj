@@ -9,10 +9,12 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.7" />
+    <PackageReference Include="MongoDB.Driver" Version="3.8.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FCG.Core\FCG.Core.csproj" />
+    <ProjectReference Include="..\FCG.Infra\FCG.Infra.csproj" />
   </ItemGroup>
 
 </Project>

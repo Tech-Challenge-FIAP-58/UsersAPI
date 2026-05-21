@@ -96,6 +96,9 @@ builder.Services.AddSingleton<UserProducer>();
 
 builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
+builder.Services.AddSingleton<MongoDbService>();
+
+builder.Services.AddScoped<IEventLogRepository, EventLogRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
